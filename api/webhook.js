@@ -1,5 +1,5 @@
 import { sendWhatsApp, downloadMedia } from '../lib/twilio.js';
-import { analyzeImage, chat, transcribeAudio } from '../lib/claude.js';
+import { analyzeImage, chat } from '../lib/claude.js';
 import {
   getProfile, saveProfile,
   saveMedication, getMedications,
@@ -62,16 +62,9 @@ export default async function handler(req, res) {
       return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
     }
 
-    // Nota de voz
+    // Nota de voz — Claude API no soporta audio directamente
     if (hasMedia && isAudio && MediaUrl0) {
-      await sendWhatsApp(From, `🎤 Escuché tu nota de voz, ${name}... un momento.`);
-      const { base64, mediaType } = await downloadMedia(MediaUrl0);
-      const transcribed = await transcribeAudio(base64, mediaType);
-      if (!transcribed) {
-        await sendWhatsApp(From, `Lo siento ${name}, no pude entender bien el audio. ¿Me lo escribes? 😊`);
-      } else {
-        await processText(phone, From, transcribed, name, botName, messages, `[Nota de voz: "${transcribed}"]`);
-      }
+      await sendWhatsApp(From, `🎤 ¡Hola ${name}! Escuché que me mandaste un audio, pero por ahora solo puedo leer mensajes de texto. ¿Me lo escribes? Así te entiendo mejor 😊`);
       return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
     }
 
