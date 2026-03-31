@@ -4,8 +4,6 @@
       "path": "/api/cron",
       "schedule": "0 8 * * *"
     }
-  ],
-  "rewrites": [
-    { "source": "/dashboard", "destination": "/dashboard.html" }
   ]
 }
+```
