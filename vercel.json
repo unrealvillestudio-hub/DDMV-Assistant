@@ -1,0 +1,11 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron",
+      "schedule": "0 * * * *"
+    }
+  ],
+  "rewrites": [
+    { "source": "/dashboard", "destination": "/public/dashboard.html" }
+  ]
+}

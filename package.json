@@ -1,0 +1,12 @@
+{
+  "name": "damaris-bot",
+  "version": "1.0.0",
+  "description": "Asistente WhatsApp para Damaris — medicamentos, citas y ejercicios mentales",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "twilio": "^4.19.0"
+  }
+}

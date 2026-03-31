@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel — Mi Asistente</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#F5F0EB;--card:#fff;--pri:#C8623A;--pri-lt:#F5E6DE;
+  --grn:#5C9A62;--grn-lt:#EAF5EB;--gld:#C8940A;--gld-lt:#FDF3D0;
+  --red:#C03030;--red-lt:#FDECEC;
+  --txt:#2A180A;--txt-md:#7A4A28;--txt-lt:#B8845A;
+  --bdr:#E8D8C8;--shd:0 4px 20px rgba(0,0,0,.08);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+
+/* LOGIN */
+#login{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.login-box{background:var(--card);border-radius:20px;padding:40px 32px;max-width:380px;width:100%;box-shadow:var(--shd);text-align:center}
+.login-ico{font-size:56px;margin-bottom:12px}
+.login-ttl{font-size:26px;font-weight:900;color:var(--txt);margin-bottom:6px}
+.login-sub{font-size:15px;color:var(--txt-lt);margin-bottom:28px}
+.login-inp{width:100%;padding:14px 16px;font-size:17px;font-family:inherit;border:2.5px solid var(--bdr);border-radius:12px;outline:none;margin-bottom:14px;transition:border-color .2s}
+.login-inp:focus{border-color:var(--pri)}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,var(--pri),#E07848);color:#fff;border:none;border-radius:12px;font-size:17px;font-weight:800;cursor:pointer;font-family:inherit}
+
+/* APP */
+#app{display:none;flex-direction:column;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#C8623A,#E07848 60%,#C8940A);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 3px 12px rgba(200,98,58,.3)}
+.topbar-l{display:flex;align-items:center;gap:10px}
+.topbar-ico{font-size:24px}
+.topbar-t{font-size:18px;font-weight:900;color:#fff}
+.topbar-s{font-size:12px;color:rgba(255,255,255,.75);font-weight:600}
+.topbar-r{display:flex;align-items:center;gap:8px}
+.refresh-btn{background:rgba(255,255,255,.22);border:none;border-radius:8px;padding:7px 11px;color:#fff;font-size:14px;cursor:pointer;font-family:inherit;font-weight:700}
+.logout-btn{background:rgba(255,255,255,.15);border:none;border-radius:8px;padding:7px 11px;color:rgba(255,255,255,.8);font-size:13px;cursor:pointer;font-family:inherit}
+
+/* TABS */
+.tabs{display:flex;background:#fff;border-bottom:2px solid var(--bdr);overflow-x:auto;position:sticky;top:56px;z-index:90}
+.tab{flex:1;min-width:80px;padding:12px 8px;font-size:13px;font-weight:800;color:var(--txt-lt);border:none;background:transparent;cursor:pointer;font-family:inherit;border-bottom:3px solid transparent;transition:all .2s;text-align:center;white-space:nowrap}
+.tab.active{color:var(--pri);border-bottom-color:var(--pri)}
+.tab-ico{font-size:18px;display:block;margin-bottom:2px}
+
+/* CONTENT */
+.content{padding:18px 16px 60px;max-width:900px;margin:0 auto;width:100%}
+.section{display:none}.section.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--r);padding:16px;box-shadow:var(--shd);margin-bottom:12px}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.card-ttl{font-size:16px;font-weight:800;color:var(--txt)}
+.card-sub{font-size:12px;color:var(--txt-lt);font-weight:600;margin-top:2px}
+
+/* CHAT */
+.chat-phone{font-size:13px;font-weight:700;color:var(--txt-lt);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.msgs{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;margin-bottom:14px;padding:4px}
+.msg{max-width:82%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.55}
+.msg-bot{background:var(--pri-lt);color:var(--txt);align-self:flex-start;border-bottom-left-radius:4px}
+.msg-user{background:var(--grn-lt);color:var(--txt);align-self:flex-end;border-bottom-right-radius:4px;border:1.5px solid #C5E0C7}
+.msg-time{font-size:11px;color:var(--txt-lt);margin-top:3px}
+.msg-send{display:flex;gap:8px;margin-top:8px}
+.msg-inp{flex:1;padding:11px 14px;font-size:14px;font-family:inherit;border:2px solid var(--bdr);border-radius:10px;outline:none}
+.msg-inp:focus{border-color:var(--pri)}
+.msg-send-btn{padding:11px 16px;background:linear-gradient(135deg,var(--pri),#E07848);color:#fff;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer}
+
+/* MED CARDS */
+.med-card{background:var(--card);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shd);margin-bottom:10px;border-left:4px solid var(--gld)}
+.med-card.inactive{opacity:.5;border-left-color:#ccc}
+.med-name{font-size:16px;font-weight:800;color:var(--txt)}
+.med-detail{font-size:13px;color:var(--txt-md);margin-top:3px}
+.med-times{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.time-pill{background:var(--gld-lt);border:1.5px solid var(--gld);color:var(--gld);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:800}
+.med-actions{display:flex;gap:8px;margin-top:10px}
+.action-btn{padding:7px 13px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:all .15s}
+.btn-toggle{background:var(--grn-lt);color:var(--grn);border:1.5px solid var(--grn)}
+.btn-toggle.off{background:var(--red-lt);color:var(--red);border-color:var(--red)}
+.btn-del{background:#F5E6E6;color:var(--red);border:1.5px solid #ECCCC8}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--bdr)}
+.toggle-lbl{font-size:15px;font-weight:700;color:var(--txt)}
+.toggle-sub{font-size:12px;color:var(--txt-lt);margin-top:2px}
+
+/* TOGGLE SWITCH */
+.switch{position:relative;display:inline-block;width:46px;height:26px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:26px;transition:.3s}
+.slider:before{position:absolute;content:"";height:20px;width:20px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.slider{background:var(--grn)}
+input:checked+.slider:before{transform:translateX(20px)}
+
+/* NUMBER INPUT */
+.num-inp{width:70px;padding:8px 10px;font-size:15px;font-weight:700;font-family:inherit;border:2px solid var(--bdr);border-radius:8px;text-align:center;outline:none}
+.num-inp:focus{border-color:var(--pri)}
+
+/* APPT CARD */
+.appt-card{background:var(--card);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shd);margin-bottom:10px;border-left:4px solid var(--pri)}
+.appt-doc{font-size:15px;font-weight:800;color:var(--txt)}
+.appt-date{font-size:13px;color:var(--pri);font-weight:700;margin-top:3px}
+.appt-loc{font-size:13px;color:var(--txt-lt);margin-top:2px}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--txt-lt)}
+.empty-ico{font-size:48px;margin-bottom:10px}
+.empty-txt{font-size:15px;font-weight:600}
+
+/* STAT ROW */
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px}
+.stat{background:var(--card);border-radius:var(--r);padding:14px;text-align:center;box-shadow:var(--shd)}
+.stat-n{font-size:26px;font-weight:900;color:var(--pri)}
+.stat-l{font-size:12px;color:var(--txt-lt);font-weight:700;margin-top:2px}
+
+/* TOAST */
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#2A180A;color:#fff;padding:11px 20px;border-radius:20px;font-size:14px;font-weight:700;transition:transform .3s;z-index:999;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* SECTION TITLE */
+.sec-ttl{font-size:19px;font-weight:900;color:var(--txt);margin-bottom:14px}
+
+/* SAVE BTN */
+.save-btn{width:100%;padding:14px;background:linear-gradient(135deg,var(--grn),#4A8A50);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;margin-top:16px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <div class="login-ico">🔐</div>
+    <div class="login-ttl">Panel de Damaris</div>
+    <div class="login-sub">Acceso exclusivo para el cuidador</div>
+    <input type="password" class="login-inp" id="pwd-in" placeholder="Contraseña..." onkeydown="if(event.key==='Enter')doLogin()">
+    <input type="text" class="login-inp" id="phone-in" placeholder="Teléfono de Damaris (ej: +5076XXXXXXX)">
+    <button class="login-btn" onclick="doLogin()">Entrar →</button>
+    <div id="login-err" style="color:var(--red);font-size:13px;margin-top:10px;display:none">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-l">
+      <div class="topbar-ico">🧠</div>
+      <div>
+        <div class="topbar-t">Mi Asistente</div>
+        <div class="topbar-s" id="last-update">Cargando...</div>
+      </div>
+    </div>
+    <div class="topbar-r">
+      <button class="refresh-btn" onclick="loadAll()">↻ Actualizar</button>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('chat')"><span class="tab-ico">💬</span>Chats</button>
+    <button class="tab" onclick="showTab('meds')"><span class="tab-ico">💊</span>Medicamentos</button>
+    <button class="tab" onclick="showTab('appts')"><span class="tab-ico">📅</span>Citas</button>
+    <button class="tab" onclick="showTab('cfg')"><span class="tab-ico">⚙️</span>Config</button>
+  </div>
+
+  <div class="content">
+
+    <!-- CHAT -->
+    <div class="section active" id="sec-chat">
+      <div class="stat-row" id="stats-row">
+        <div class="stat"><div class="stat-n" id="st-meds">—</div><div class="stat-l">Medicamentos</div></div>
+        <div class="stat"><div class="stat-n" id="st-appts">—</div><div class="stat-l">Citas</div></div>
+        <div class="stat"><div class="stat-n" id="st-msgs">—</div><div class="stat-l">Mensajes</div></div>
+      </div>
+      <div class="sec-ttl">💬 Conversación</div>
+      <div class="card">
+        <div class="chat-phone">📱 <span id="chat-phone-lbl"></span></div>
+        <div class="msgs" id="msgs-list">
+          <div class="empty"><div class="empty-ico">💬</div><div class="empty-txt">Cargando conversación...</div></div>
+        </div>
+        <div class="msg-send">
+          <input type="text" class="msg-inp" id="send-inp" placeholder="Escribir mensaje a Damaris..." onkeydown="if(event.key==='Enter')sendMsg()">
+          <button class="msg-send-btn" onclick="sendMsg()">Enviar ✉️</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDICAMENTOS -->
+    <div class="section" id="sec-meds">
+      <div class="sec-ttl">💊 Medicamentos activos</div>
+      <div id="meds-list">
+        <div class="empty"><div class="empty-ico">💊</div><div class="empty-txt">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- CITAS -->
+    <div class="section" id="sec-appts">
+      <div class="sec-ttl">📅 Próximas citas</div>
+      <div id="appts-list">
+        <div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">Cargando...</div></div>
+      </div>
+    </div>
+
+    <!-- CONFIGURACIÓN -->
+    <div class="section" id="sec-cfg">
+      <div class="sec-ttl">⚙️ Notificaciones</div>
+
+      <div class="card">
+        <div class="card-ttl" style="margin-bottom:14px">💊 Medicamentos</div>
+        <div class="toggle-row">
+          <div><div class="toggle-lbl">Recordatorios de medicamentos</div><div class="toggle-sub">Enviar aviso a la hora de cada pastilla</div></div>
+          <label class="switch"><input type="checkbox" id="cfg-med-on" checked><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-ttl" style="margin-bottom:14px">📅 Citas médicas</div>
+        <div class="toggle-row">
+          <div><div class="toggle-lbl">Recordatorio de citas</div><div class="toggle-sub">Avisar antes de cada cita</div></div>
+          <label class="switch"><input type="checkbox" id="cfg-appt-on" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row" style="border:none">
+          <div><div class="toggle-lbl">¿Con cuántas horas de anticipación?</div></div>
+          <input type="number" class="num-inp" id="cfg-appt-hrs" value="24" min="1" max="72">
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-ttl" style="margin-bottom:14px">🧠 Ejercicios mentales</div>
+        <div class="toggle-row">
+          <div><div class="toggle-lbl">Recordatorio diario</div><div class="toggle-sub">Recordarle abrir el Gimnasio Mental</div></div>
+          <label class="switch"><input type="checkbox" id="cfg-ex-on" checked><span class="slider"></span></label>
+        </div>
+        <div class="toggle-row" style="border:none">
+          <div><div class="toggle-lbl">Hora del recordatorio (Panamá)</div><div class="toggle-sub">Formato 24h — hora local de Damaris</div></div>
+          <input type="number" class="num-inp" id="cfg-ex-hr" value="10" min="6" max="22">
+        </div>
+      </div>
+
+      <button class="save-btn" onclick="saveSettings()">Guardar cambios ✓</button>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+let SECRET = '';
+let PHONE  = '';
+const API  = '/api/admin';
+
+// ── AUTH ─────────────────────────────────────────────────────
+async function doLogin() {
+  SECRET = document.getElementById('pwd-in').value;
+  PHONE  = document.getElementById('phone-in').value.replace(/\s/g,'');
+  const res = await fetch(`${API}?resource=conversations&secret=${SECRET}`);
+  if (!res.ok) {
+    document.getElementById('login-err').style.display = 'block';
+    return;
+  }
+  localStorage.setItem('dm_secret', SECRET);
+  localStorage.setItem('dm_phone',  PHONE);
+  document.getElementById('login').style.display    = 'none';
+  document.getElementById('app').style.display      = 'flex';
+  document.getElementById('chat-phone-lbl').textContent = PHONE;
+  loadAll();
+  setInterval(loadConversation, 30000); // refresca chats cada 30s
+}
+
+function logout() {
+  localStorage.removeItem('dm_secret');
+  localStorage.removeItem('dm_phone');
+  location.reload();
+}
+
+// ── TABS ─────────────────────────────────────────────────────
+function showTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    const names = ['chat','meds','appts','cfg'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById(`sec-${name}`).classList.add('active');
+}
+
+// ── LOAD ALL ─────────────────────────────────────────────────
+async function loadAll() {
+  document.getElementById('last-update').textContent = 'Actualizando...';
+  await Promise.all([loadConversation(), loadMeds(), loadAppts(), loadSettings()]);
+  document.getElementById('last-update').textContent =
+    'Actualizado ' + new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── CONVERSACIÓN ─────────────────────────────────────────────
+async function loadConversation() {
+  const res  = await api('conversations');
+  const convs = await res.json();
+  const conv  = convs.find(c => c.phone === PHONE) || convs[0];
+  if (!conv) { document.getElementById('msgs-list').innerHTML = '<div class="empty"><div class="empty-ico">💬</div><div class="empty-txt">Aún no hay mensajes</div></div>'; return; }
+
+  const msgs = conv.messages || [];
+  document.getElementById('st-msgs').textContent = msgs.length;
+
+  const html = msgs.map(m => {
+    const isUser = m.role === 'user';
+    return `<div class="msg ${isUser ? 'msg-user' : 'msg-bot'}">${escHtml(m.content)}</div>`;
+  }).join('');
+  const list = document.getElementById('msgs-list');
+  list.innerHTML = html || '<div class="empty"><div class="empty-ico">💬</div><div class="empty-txt">Sin mensajes aún</div></div>';
+  list.scrollTop = list.scrollHeight;
+}
+
+// ── MEDICAMENTOS ─────────────────────────────────────────────
+async function loadMeds() {
+  const res  = await api('medications');
+  const meds = await res.json();
+  const active = meds.filter(m => m.active);
+  document.getElementById('st-meds').textContent = active.length;
+
+  if (!active.length) {
+    document.getElementById('meds-list').innerHTML = '<div class="empty"><div class="empty-ico">💊</div><div class="empty-txt">No hay medicamentos registrados</div></div>';
+    return;
+  }
+  document.getElementById('meds-list').innerHTML = active.map(m => `
+    <div class="med-card ${m.reminder_on===false?'inactive':''}" id="med-${m.id}">
+      <div class="med-name">💊 ${escHtml(m.name)} ${m.dose ? `<span style="font-weight:600;font-size:14px;color:var(--txt-md)">${escHtml(m.dose)}</span>` : ''}</div>
+      <div class="med-detail">${escHtml(m.frequency||'Sin frecuencia')}${m.instructions?` &nbsp;•&nbsp; ${escHtml(m.instructions)}`:''}</div>
+      <div class="med-times">${(m.schedule_times||[]).map(t=>`<span class="time-pill">⏰ ${t}</span>`).join('')}</div>
+      <div class="med-actions">
+        <button class="action-btn btn-toggle ${m.reminder_on===false?'off':''}" onclick="toggleMedReminder('${m.id}',${m.reminder_on!==false})">
+          ${m.reminder_on===false?'🔕 Activar recordatorio':'🔔 Desactivar recordatorio'}
+        </button>
+        <button class="action-btn btn-del" onclick="deleteMed('${m.id}')">🗑️ Eliminar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function toggleMedReminder(id, currentOn) {
+  await api(`medications&id=${id}`, 'PUT', { reminder_on: !currentOn });
+  toast(currentOn ? '🔕 Recordatorio desactivado' : '🔔 Recordatorio activado');
+  loadMeds();
+}
+
+async function deleteMed(id) {
+  if (!confirm('¿Eliminar este medicamento?')) return;
+  await api(`medications&id=${id}`, 'DELETE');
+  toast('🗑️ Medicamento eliminado');
+  loadMeds();
+}
+
+// ── CITAS ────────────────────────────────────────────────────
+async function loadAppts() {
+  const res   = await api('appointments');
+  const appts = await res.json();
+  document.getElementById('st-appts').textContent = appts.length;
+
+  if (!appts.length) {
+    document.getElementById('appts-list').innerHTML = '<div class="empty"><div class="empty-ico">📅</div><div class="empty-txt">No hay citas próximas</div></div>';
+    return;
+  }
+  document.getElementById('appts-list').innerHTML = appts.map(a => `
+    <div class="appt-card">
+      <div class="appt-doc">👨‍⚕️ ${a.specialty||'Cita médica'}${a.doctor?` — Dr(a). ${escHtml(a.doctor)}`:''}</div>
+      <div class="appt-date">📆 ${fmtDate(a.date_time)}</div>
+      ${a.location?`<div class="appt-loc">📍 ${escHtml(a.location)}</div>`:''}
+      ${a.notes?`<div style="font-size:13px;color:var(--txt-lt);margin-top:4px">📝 ${escHtml(a.notes)}</div>`:''}
+      <div class="med-actions" style="margin-top:8px">
+        <button class="action-btn btn-del" onclick="deleteAppt('${a.id}')">🗑️ Eliminar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function deleteAppt(id) {
+  if (!confirm('¿Eliminar esta cita?')) return;
+  await api(`appointments&id=${id}`, 'DELETE');
+  toast('🗑️ Cita eliminada');
+  loadAppts();
+}
+
+// ── CONFIGURACIÓN ─────────────────────────────────────────────
+async function loadSettings() {
+  const res = await api(`settings&phone=${encodeURIComponent(PHONE)}`);
+  const cfg = await res.json();
+  document.getElementById('cfg-med-on').checked   = cfg.med_reminder_on !== false;
+  document.getElementById('cfg-appt-on').checked  = cfg.appointment_reminder_on !== false;
+  document.getElementById('cfg-appt-hrs').value   = cfg.appointment_hours_before || 24;
+  document.getElementById('cfg-ex-on').checked    = cfg.exercise_reminder_on !== false;
+  document.getElementById('cfg-ex-hr').value      = cfg.exercise_hour ?? 10;
+}
+
+async function saveSettings() {
+  const body = {
+    med_reminder_on:          document.getElementById('cfg-med-on').checked,
+    appointment_reminder_on:  document.getElementById('cfg-appt-on').checked,
+    appointment_hours_before: parseInt(document.getElementById('cfg-appt-hrs').value),
+    exercise_reminder_on:     document.getElementById('cfg-ex-on').checked,
+    exercise_hour:            parseInt(document.getElementById('cfg-ex-hr').value),
+  };
+  await api(`settings&phone=${encodeURIComponent(PHONE)}`, 'POST', body);
+  toast('✅ Configuración guardada');
+}
+
+// ── ENVIAR MENSAJE MANUAL ─────────────────────────────────────
+async function sendMsg() {
+  const inp = document.getElementById('send-inp');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  await api('send', 'POST', { to: PHONE, message: msg });
+  inp.value = '';
+  toast('📤 Mensaje enviado');
+  setTimeout(loadConversation, 2000);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+function api(resource, method = 'GET', body = null) {
+  const opts = {
+    method,
+    headers: { 'Content-Type':'application/json', 'x-admin-secret': SECRET }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  return fetch(`${API}?resource=${resource}`, opts);
+}
+
+function fmtDate(iso) {
+  if (!iso) return 'Fecha por confirmar';
+  return new Date(iso).toLocaleDateString('es-PA', {
+    weekday:'long',day:'numeric',month:'long',year:'numeric',
+    hour:'2-digit',minute:'2-digit'
+  });
+}
+
+function escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// Auto-login si hay sesión guardada
+window.addEventListener('load', () => {
+  const s = localStorage.getItem('dm_secret');
+  const p = localStorage.getItem('dm_phone');
+  if (s && p) {
+    document.getElementById('pwd-in').value   = s;
+    document.getElementById('phone-in').value = p;
+    doLogin();
+  }
+});
+</script>
+</body>
+</html>
