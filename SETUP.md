@@ -1,4 +1,4 @@
-# 🤖 Mi Asistente — Guía de Instalación
+# Mi Asistente — Guía de Instalación
 
 ## Lo que ya está hecho ✅
 - Proyecto Supabase **XMMs** creado en `us-east-1`
