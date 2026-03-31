@@ -6,10 +6,8 @@ import {
   saveAppointment, getAppointments
 } from '../lib/db.js';
 
-// Vercel: disable automatic body parsing so we can handle form-urlencoded
 export const config = { api: { bodyParser: false } };
 
-// Parse application/x-www-form-urlencoded manually
 function parseBody(req) {
   return new Promise((resolve) => {
     let data = '';
@@ -29,7 +27,7 @@ Me presento: soy tu asistente y me llamo "${botName}". Pero si quieres puedes ll
 
 Estoy aquí para ayudarte con tus medicamentos, tus citas médicas, tus ejercicios mentales y con lo que necesites — incluso tus compromisos con la iglesia o cualquier actividad de tu agenda.
 
-Cuando estés lista — hoy, mañana o cuando quieras — puedes enviarme una foto de tus recetas y las guardo automáticamente. Y si ya tomas medicamentos periódicamente, dímelo y los anoto.
+Cuando estés lista — hoy, mañana o cuando quieras — puedes enviarme una foto de tus recetas y las guardo automáticamente. Y si ya tomas medicamentos, dímelo y los anoto.
 
 Te enviaré recordatorios dos días antes, un día antes y el mismo día temprano para tus citas. Y a la hora exacta de cada medicamento.
 
@@ -38,20 +36,13 @@ Puedes escribirme o mandarme una nota de voz cuando quieras. ¡Aquí estaré! �
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  let body;
-  try {
-    body = await parseBody(req);
-  } catch {
-    return res.status(400).end();
-  }
-
+  // 1. Parsear body PRIMERO
+  const body = await parseBody(req);
   const { From, Body, MediaUrl0, MediaContentType0, NumMedia } = body;
 
-  // Respond to Twilio immediately (required within 15s)
-  res.setHeader('Content-Type', 'text/xml');
-  res.status(200).end('<Response></Response>');
-
-  if (!From) return;
+  if (!From) {
+    return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
+  }
 
   const phone    = From.replace('whatsapp:', '');
   const text     = (Body || '').trim();
@@ -59,38 +50,37 @@ export default async function handler(req, res) {
   const isAudio  = MediaContentType0?.startsWith('audio/');
   const isImage  = MediaContentType0?.startsWith('image/');
 
+  // 2. Procesar mensaje COMPLETAMENTE antes de responder a Twilio
   try {
     const { messages, name, botName, welcomed } = await getProfile(phone);
 
-    // ── BIENVENIDA (primer contacto o código join) ─────
+    // Bienvenida (primer contacto o código join)
     const isJoinCode = /^join\s+/i.test(text);
     if (!welcomed || isJoinCode) {
       await sendWhatsApp(From, WELCOME_MSG(name, botName));
       await saveProfile(phone, { welcomed: true, messages: [] });
-      return;
+      return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
     }
 
-    // ── NOTA DE VOZ ────────────────────────────────────
+    // Nota de voz
     if (hasMedia && isAudio && MediaUrl0) {
       await sendWhatsApp(From, `🎤 Escuché tu nota de voz, ${name}... un momento.`);
       const { base64, mediaType } = await downloadMedia(MediaUrl0);
       const transcribed = await transcribeAudio(base64, mediaType);
       if (!transcribed) {
-        await sendWhatsApp(From, `Lo siento ${name}, no pude entender bien el audio. ¿Me lo puedes escribir? 😊`);
-        return;
+        await sendWhatsApp(From, `Lo siento ${name}, no pude entender bien el audio. ¿Me lo escribes? 😊`);
+      } else {
+        await processText(phone, From, transcribed, name, botName, messages, `[Nota de voz: "${transcribed}"]`);
       }
-      await processText(phone, From, transcribed, name, botName, messages, `[Nota de voz: "${transcribed}"]`);
-      return;
+      return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
     }
 
-    // ── IMAGEN ─────────────────────────────────────────
+    // Imagen
     if (hasMedia && isImage && MediaUrl0) {
       await sendWhatsApp(From, `🔍 Revisando la imagen... un momento, ${name}.`);
       const { base64, mediaType } = await downloadMedia(MediaUrl0);
       const result = await analyzeImage(base64, mediaType, text);
-
       let reply = `📋 Encontré esto:\n${result.summary}\n\n`;
-
       if (result.medications?.length > 0) {
         for (const med of result.medications) await saveMedication(phone, med);
         reply += `✅ Guardé ${result.medications.length} medicamento(s):\n`;
@@ -100,7 +90,6 @@ export default async function handler(req, res) {
         });
         reply += `\nTe avisaré a esas horas 🔔`;
       }
-
       if (result.appointments?.length > 0) {
         for (const a of result.appointments) if (a.date_time) await saveAppointment(phone, a);
         reply += `\n📅 Cita(s) guardada(s):\n`;
@@ -109,23 +98,28 @@ export default async function handler(req, res) {
           if (a.date_time) reply += `  📆 ${fmtDate(a.date_time)}\n`;
         });
       }
-
       await sendWhatsApp(From, reply);
-      await saveProfile(phone, {
-        messages: [...messages,
-          { role: 'user', content: '[Envió foto de receta/medicamento]' },
-          { role: 'assistant', content: reply }]
+      await saveProfile(phone, { messages: [...messages,
+        { role: 'user', content: '[Foto de receta]' },
+        { role: 'assistant', content: reply }]
       });
-      return;
+      return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
     }
 
-    // ── TEXTO ──────────────────────────────────────────
-    if (text) await processText(phone, From, text, name, botName, messages);
+    // Texto normal
+    if (text) {
+      await processText(phone, From, text, name, botName, messages);
+    }
 
   } catch (err) {
     console.error('Webhook error:', err);
-    await sendWhatsApp(From, `⚠️ Tuve un problemita. Intenta de nuevo en un momento.`).catch(() => {});
+    try {
+      await sendWhatsApp(From, `⚠️ Tuve un problemita. Intenta de nuevo en un momento.`);
+    } catch {}
   }
+
+  // 3. Responder a Twilio AL FINAL (después de todo el procesamiento)
+  return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
 }
 
 async function processText(phone, From, text, name, botName, messages, logText = null) {
@@ -137,20 +131,17 @@ async function processText(phone, From, text, name, botName, messages, logText =
   if (rename) {
     const newName = rename[1].trim().replace(/['".,!?]/g, '');
     await saveProfile(phone, { bot_name: newName });
-    await sendWhatsApp(From, `¡Me encanta! A partir de ahora soy ${newName} para ti 😊`);
-    return;
+    return sendWhatsApp(From, `¡Me encanta! A partir de ahora soy ${newName} para ti 😊`);
   }
 
   // Comandos rápidos
   if (/mis medicamentos|qué tomo|pastillas|medicinas/.test(lower)) {
     const meds = await getMedications(phone);
-    if (!meds.length) {
-      return sendWhatsApp(From, `💊 Aún no tienes medicamentos registrados, ${name}.\n\nEnvíame una foto de tu receta y los agrego 📸`);
-    }
+    if (!meds.length) return sendWhatsApp(From, `💊 Aún no tienes medicamentos registrados, ${name}.\n\nEnvíame una foto de tu receta y los agrego 📸`);
     let msg = `💊 Tus medicamentos, ${name}:\n\n`;
     meds.forEach((m, i) => {
       msg += `${i+1}. ${m.name} ${m.dose || ''}\n`;
-      if (m.frequency)             msg += `   📋 ${m.frequency}\n`;
+      if (m.frequency)              msg += `   📋 ${m.frequency}\n`;
       if (m.schedule_times?.length) msg += `   ⏰ ${m.schedule_times.join(', ')}\n`;
       if (m.instructions)           msg += `   📝 ${m.instructions}\n`;
     });
@@ -159,9 +150,7 @@ async function processText(phone, From, text, name, botName, messages, logText =
 
   if (/mis citas|próxima cita|citas médicas/.test(lower)) {
     const appts = await getAppointments(phone);
-    if (!appts.length) {
-      return sendWhatsApp(From, `📅 No tienes citas próximas registradas, ${name}.\n\nEnvíame la foto de tu orden médica y la agrego 📸`);
-    }
+    if (!appts.length) return sendWhatsApp(From, `📅 No tienes citas próximas, ${name}.\n\nEnvíame la foto de tu orden médica y la agrego 📸`);
     let msg = `📅 Tus próximas citas, ${name}:\n\n`;
     appts.forEach((a, i) => {
       msg += `${i+1}. ${a.specialty || 'Cita médica'}\n`;
@@ -174,11 +163,10 @@ async function processText(phone, From, text, name, botName, messages, logText =
 
   if (/^(ya tomé|ya tome|tomé|tome|lo tomé)$/i.test(lower)) {
     await sendWhatsApp(From, `¡Muy bien, ${name}! ✅ Anotado. ¡Cuídate mucho! 💛`);
-    await saveProfile(phone, { messages: [...messages,
+    return saveProfile(phone, { messages: [...messages,
       { role: 'user', content: text },
       { role: 'assistant', content: '¡Muy bien! Anotado ✅' }]
     });
-    return;
   }
 
   if (/^(ayuda|menú|menu|hola|buenas|buenos días|buenas tardes|buenas noches)$/i.test(lower)) {
@@ -190,11 +178,11 @@ async function processText(phone, From, text, name, botName, messages, logText =
       + `❓ Cualquier pregunta → aquí estoy`);
   }
 
-  // Chat general
+  // Chat general con Claude
   const meds  = await getMedications(phone);
   const appts = await getAppointments(phone);
   const ctx = meds.length
-    ? `[Contexto: ${name} toma: ${meds.map(m=>`${m.name} ${m.dose||''} ${m.frequency||''}`).join('; ')}. Citas: ${appts.length ? appts.map(a=>`${a.specialty} el ${fmtDate(a.date_time)}`).join('; ') : 'ninguna'}]`
+    ? `[Contexto: ${name} toma: ${meds.map(m=>`${m.name} ${m.dose||''} ${m.frequency||''}`).join('; ')}]`
     : '';
 
   const reply = await chat(
@@ -202,7 +190,6 @@ async function processText(phone, From, text, name, botName, messages, logText =
     name, botName
   );
 
-  // Detectar rename en respuesta de Claude
   const renameTag = reply.match(/\[BOT_RENAME:(.+?)\]/);
   const cleanReply = reply.replace(/\[BOT_RENAME:.+?\]/g, '').trim();
   if (renameTag) await saveProfile(phone, { bot_name: renameTag[1].trim() });
