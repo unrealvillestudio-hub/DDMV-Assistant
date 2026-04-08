@@ -30,12 +30,12 @@ const ALLOWED_NUMBERS = [
 // ─────────────────────────────────────────────────────────────────────────────
 
 const WELCOME_MSG = (name, botName) =>
-`¡Hola! Por ahí me dijeron que te llamas ${name} 🌸
-Me presento: soy tu asistente y me llamo "${botName}". Pero si quieres puedes llamarme como tú quieras — solo dime "a partir de ahora te llamaré..." y me lo grabo.
-Estoy aquí para ayudarte con tus medicamentos, tus citas médicas, tus ejercicios mentales y con lo que necesites — incluso tus compromisos con la iglesia o cualquier actividad de tu agenda.
-Cuando estés lista — hoy, mañana o cuando quieras — puedes enviarme una foto de tus recetas y las guardo automáticamente. Y si ya tomas medicamentos, dímelo y los anoto.
-Te enviaré recordatorios dos días antes, un día antes y el mismo día temprano para tus citas. Y a la hora exacta de cada medicamento.
-Puedes escribirme o mandarme una nota de voz cuando quieras. ¡Aquí estaré! ❤️`;
+`¡Hola ${name}! Por ahí me dijeron que ese es tu nombre 🌸
+Me presento: soy tu asistente personal y me llamo "${botName}" — aunque si quieres puedes llamarme como tú prefieras, solo dime "a partir de ahora te llamaré..." y me lo grabo para siempre.
+Quiero que sepas que estoy aquí para ayudarte con tus medicamentos, tus citas médicas, tus ejercicios mentales y con todo lo que necesites — incluso para estar pendiente de tu agenda: tus compromisos con la iglesia, con la familia, lo que sea.
+Cuando estés lista — hoy, mañana o cuando quieras — puedes enviarme una foto de tus recetas y las guardo automáticamente. Y si ya tomas medicamentos periódicamente, dímelo y los anoto.
+Te enviaré recordatorios a la hora exacta de cada medicamento, y para tus citas: dos días antes, un día antes y el mismo día muy temprano para que tengas tiempo de prepararte.
+Escríbeme cuando quieras — ¡aquí estaré siempre! ❤️`;
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
@@ -74,7 +74,7 @@ export default async function handler(req, res) {
 
     // Nota de voz — Claude API no soporta audio directamente
     if (hasMedia && isAudio && MediaUrl0) {
-      await sendWhatsApp(From, `🎤 ¡Hola ${name}! Escuché que me mandaste un audio, pero por ahora solo puedo leer mensajes de texto. ¿Me lo escribes? Así te entiendo mejor 😊`);
+      await sendWhatsApp(From, `😜 ¡Damaris, aún no soy tan inteligente como para entender audios! Pero estoy aprendiendo... por ahora escríbeme y te respondo enseguida ❤️`);
       return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
     }
 
