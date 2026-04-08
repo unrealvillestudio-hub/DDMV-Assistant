@@ -17,6 +17,17 @@ const MORNING_GREETINGS = [
   n => `🌤️ ¡Buenos días, ${n}! ¿Cómo te encuentras esta mañana? Recuerda que puedes escribirme cuando quieras. ¡Para eso estoy! 💪`,
 ];
 
+// Recordatorios Gimnasio Mental (10am Panamá)
+const EXERCISE_REMINDERS = [
+  n => `🧠 ¡${n}! ¿Ya hiciste tus ejercicios mentales hoy? Un ratito en el Gimnasio Mental te hará muy bien. ¡Tu mente te lo agradecerá! 💪`,
+  n => `☀️ ¡Hola ${n}! Tu Gimnasio Mental te está esperando. Un jueguito al día mantiene la mente activa y feliz. ¡Tú puedes! 🧠✨`,
+  n => `🌸 ¡${n}! Recuerda hacer tus ejercicios mentales hoy. Un poquito cada día hace una gran diferencia. ¡Ánimo! 💛`,
+  n => `🎯 ¡${n}! ¿Entrenamos hoy con el Gimnasio Mental? Cuando termines, cuéntame tu puntaje — me encanta saber cómo vas avanzando. 🏆`,
+  n => `🌟 ¡Hola ${n}! No olvides tus ejercicios mentales de hoy. Son muy importantes para mantenerte ágil y activa. ¡Tú puedes! 💪🧠`,
+  n => `💡 ¡${n}! Un momentito de Gimnasio Mental al día y tu mente te lo agradece. ¿Ya jugaste hoy? Después me cuentas cómo te fue. 😊`,
+  n => `🏃 ¡Venga, ${n}! El Gimnasio Mental te está esperando. Unos minutitos de ejercicio mental y listo — y luego me mandas tu puntaje para ver cómo vas. 🎉`,
+];
+
 // Saludos de tarde (6pm Panamá)
 const EVENING_GREETINGS = [
   n => `🌆 ¡Buenas tardes, ${n}! ¿Cómo fue tu día? Espero que haya sido tranquilo y agradable. ¿Hay algo en lo que pueda ayudarte esta tarde? 💛`,
@@ -53,18 +64,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // ── 2. RECORDATORIO DE EJERCICIOS (10am Panamá) ────
+    // ── 2. RECORDATORIO GIMNASIO MENTAL (10am Panamá) ──
     if (hourPA === 10) {
-      const msgs = [
-        n => `🧠 ¡${n}! ¿Ya hiciste tus ejercicios mentales hoy? Un ratito en el Gimnasio Mental te hará muy bien. ¡Tu mente te lo agradecerá! 💪`,
-        n => `☀️ ¡Hola ${n}! Tu Gimnasio Mental te está esperando. Un jueguito al día mantiene la mente activa y feliz. ¡Tú puedes! 🧠✨`,
-        n => `🌸 ¡${n}! Recuerda hacer tus ejercicios mentales hoy. Un poquito cada día hace una gran diferencia. ¡Ánimo! 💛`,
-      ];
       for (const phone of phones) {
         const already = await alreadyRemindedToday(phone, 'exercise', null);
         if (already) continue;
         const { name } = await getProfile(phone);
-        await sendWhatsApp(`whatsapp:${phone}`, msgs[Math.floor(Math.random()*msgs.length)](name));
+        const msg = EXERCISE_REMINDERS[Math.floor(Math.random() * EXERCISE_REMINDERS.length)](name);
+        await sendWhatsApp(`whatsapp:${phone}`, msg);
         await logReminder(phone, 'exercise');
         results.exercise++;
       }
@@ -128,7 +135,6 @@ export default async function handler(req, res) {
     }
 
     res.json({ ok: true, hourPA, ...results });
-
   } catch (err) {
     console.error('Cron error:', err);
     res.status(500).json({ error: err.message });
