@@ -20,17 +20,21 @@ function parseBody(req) {
   });
 }
 
+// ── WHITELIST — números autorizados ──────────────────────────────────────────
+// Solo estos números pueden interactuar con el agente.
+// El bot Twilio (service_role) bypassa esto — solo aplica a mensajes entrantes.
+const ALLOWED_NUMBERS = [
+  'whatsapp:+50767146920', // Mamá
+  'whatsapp:+34654246333', // Sam
+];
+// ─────────────────────────────────────────────────────────────────────────────
+
 const WELCOME_MSG = (name, botName) =>
 `¡Hola! Por ahí me dijeron que te llamas ${name} 🌸
-
 Me presento: soy tu asistente y me llamo "${botName}". Pero si quieres puedes llamarme como tú quieras — solo dime "a partir de ahora te llamaré..." y me lo grabo.
-
 Estoy aquí para ayudarte con tus medicamentos, tus citas médicas, tus ejercicios mentales y con lo que necesites — incluso tus compromisos con la iglesia o cualquier actividad de tu agenda.
-
 Cuando estés lista — hoy, mañana o cuando quieras — puedes enviarme una foto de tus recetas y las guardo automáticamente. Y si ya tomas medicamentos, dímelo y los anoto.
-
 Te enviaré recordatorios dos días antes, un día antes y el mismo día temprano para tus citas. Y a la hora exacta de cada medicamento.
-
 Puedes escribirme o mandarme una nota de voz cuando quieras. ¡Aquí estaré! ❤️`;
 
 export default async function handler(req, res) {
@@ -44,13 +48,19 @@ export default async function handler(req, res) {
     return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
   }
 
+  // 2. Verificar whitelist — rechazar silenciosamente números no autorizados
+  if (!ALLOWED_NUMBERS.includes(From)) {
+    console.warn(`[BLOCKED] Número no autorizado: ${From}`);
+    return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
+  }
+
   const phone    = From.replace('whatsapp:', '');
   const text     = (Body || '').trim();
   const hasMedia = parseInt(NumMedia || '0') > 0;
   const isAudio  = MediaContentType0?.startsWith('audio/');
   const isImage  = MediaContentType0?.startsWith('image/');
 
-  // 2. Procesar mensaje COMPLETAMENTE antes de responder a Twilio
+  // 3. Procesar mensaje COMPLETAMENTE antes de responder a Twilio
   try {
     const { messages, name, botName, welcomed } = await getProfile(phone);
 
@@ -111,7 +121,7 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  // 3. Responder a Twilio AL FINAL (después de todo el procesamiento)
+  // 4. Responder a Twilio AL FINAL (después de todo el procesamiento)
   return res.status(200).setHeader('Content-Type','text/xml').end('<Response></Response>');
 }
 
@@ -177,16 +187,13 @@ async function processText(phone, From, text, name, botName, messages, logText =
   const ctx = meds.length
     ? `[Contexto: ${name} toma: ${meds.map(m=>`${m.name} ${m.dose||''} ${m.frequency||''}`).join('; ')}]`
     : '';
-
   const reply = await chat(
     [...messages, { role: 'user', content: ctx ? `${ctx}\n\n${text}` : text }],
     name, botName
   );
-
   const renameTag = reply.match(/\[BOT_RENAME:(.+?)\]/);
   const cleanReply = reply.replace(/\[BOT_RENAME:.+?\]/g, '').trim();
   if (renameTag) await saveProfile(phone, { bot_name: renameTag[1].trim() });
-
   await sendWhatsApp(From, cleanReply);
   await saveProfile(phone, {
     messages: [...messages,
