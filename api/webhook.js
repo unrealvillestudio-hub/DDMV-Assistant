@@ -279,9 +279,10 @@ async function processCaregiverText(phone, From, text, name, botName, messages, 
   const remDamaris = text.match(/recuérda(?:le|la)\s+a\s+\w+\s+(.+)/i)
     || text.match(/dile\s+a\s+\w+\s+que\s+(.+)/i);
 
+  const { timezone: cgTz, timezoneLabel: cgTzLabel } = await getProfile(phone);
   const reply = await chat(
     [...messages, { role:'user', content: text }],
-    name, botName, 'caregiver', 'Damaris'
+    name, botName, 'caregiver', 'Damaris', cgTz, cgTzLabel
   );
 
   let cleanReply = reply;
