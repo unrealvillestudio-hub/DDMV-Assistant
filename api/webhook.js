@@ -296,7 +296,17 @@ async function processCaregiverText(phone, From, text, name, botName, messages, 
     } catch(e) { console.error('REMINDER_FOR_DAMARIS error', e); }
   }
 
-  // Trigger verificación inmediata
+  // Recordatorio para el propio Sam
+  const saveRemSamTag = reply.match(/\[SAVE_REMINDER:(\{.+?\})\]/s);
+  if (saveRemSamTag) {
+    try {
+      const r = JSON.parse(saveRemSamTag[1]);
+      await saveReminder(phone, r.message, r.remind_at);
+    } catch(e) { console.error('SAVE_REMINDER caregiver error', e); }
+    cleanReply = cleanReply.replace(/\[SAVE_REMINDER:.+?\]/s,'').trim();
+  }
+
+    // Trigger verificación inmediata
   const triggerTag = reply.match(/\[TRIGGER_CHECK:(\{.+?\})\]/s);
   if (triggerTag && damarisPhone) {
     try {
