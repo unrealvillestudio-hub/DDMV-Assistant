@@ -4,7 +4,7 @@
   "description": "Asistente WhatsApp para Damaris — medicamentos, citas y ejercicios mentales",
   "private": true,
   "type": "module",
-  "engines": { "node": "20.x" },
+  "engines": { "node": "24.x" },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.20.0",
     "@supabase/supabase-js": "^2.39.0",
